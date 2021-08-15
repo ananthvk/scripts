@@ -140,3 +140,5 @@ workspace.code-workspace
 *.exe
 redditbot.ipynb
 saves/
+saves_old/
+images/

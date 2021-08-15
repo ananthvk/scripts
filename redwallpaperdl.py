@@ -29,13 +29,12 @@ import os
 import requests
 from mimetypes import MimeTypes
 import traceback
-
-NUMBER_CONCURRENT_CONNECTIONS = 4
+NUMBER_TOP = 10
+NUMBER_CONCURRENT_CONNECTIONS = 8
 SAVE_PATH = 'saves'
 subreddits = [
     'SpacePorn',
     'EarthPorn',
-    'wallpaper'
     'wallpapers',
     'BotanicalPorn',
     'CityPorn',
@@ -91,9 +90,9 @@ class WallpaperDownloader:
         except Exception as e:
             print('Error while reading cache file')
 
-    def get_trending_submissions(self, subreddit_name, limit=10):
+    def get_trending_submissions(self, subreddit_name, limit=NUMBER_TOP):
         try:
-            return [submission for submission in walldl.reddit.subreddit(subreddit_name).hot(limit=limit) if not submission.is_self]
+            return [submission for submission in self.reddit.subreddit(subreddit_name).hot(limit=limit) if not submission.is_self]
         except Exception as e:
             return []
 
@@ -132,7 +131,9 @@ class WallpaperDownloader:
                 submission = dl_tuple[0]
                 extension = dl_tuple[1]
                 try:
-                    with open(os.path.join(SAVE_PATH, f'{submission.title}.{extension}'), 'wb') as save_file:
+                    # Clean file name
+                    fn = ''.join([i for i in submission.title if i.isalnum() or i in '.-_ ()[]'])
+                    with open(os.path.join(SAVE_PATH, f'{fn}.{extension}'), 'wb') as save_file:
                         save_file.write(response.content)
 
                     if self.cache.get(submission.id) is None:
@@ -141,9 +142,10 @@ class WallpaperDownloader:
                     self.cache[submission.id]['title'] = submission.title
                     self.cache[submission.id]['link'] = 'https://reddit.com' + \
                         submission.permalink
-                    self.cache[submission.id]['filename'] = f'{submission.title}.{extension}'
+                    self.cache[submission.id]['filename'] = f'{fn}.{extension}'
                 except Exception as e:
                     traceback.print_exc()
+                    del self.cache[submission.id]
                     print('Error saving file')
 
         except Exception as e:
@@ -154,10 +156,22 @@ class WallpaperDownloader:
                 json.dump(self.cache, cache_file, indent=4, sort_keys=True)
 
 
-walldl = WallpaperDownloader()
-for subreddit in subreddits:
-    submissions = walldl.get_trending_submissions(subreddit)
-    dl_list = walldl.generate_download_list(submissions)
-    walldl.download(dl_list)
-    print('Sleeping')
-    time.sleep(20)
+def download_wallpapers():
+    walldl = WallpaperDownloader()
+    print('Downloading')
+    for subreddit in subreddits:
+        print(f'Downloading from subreddit')
+        submissions = walldl.get_trending_submissions(subreddit)
+        print(submissions)
+        dl_list = walldl.generate_download_list(submissions)
+        walldl.download(dl_list)
+        # print('Sleeping')
+        # time.sleep(20)
+
+
+def main():
+    download_wallpapers()
+
+
+if __name__ == '__main__':
+    main()
