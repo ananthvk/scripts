@@ -138,3 +138,5 @@ dmypy.json
 cython_debug/
 workspace.code-workspace
 *.exe
+redditbot.ipynb
+saves/
