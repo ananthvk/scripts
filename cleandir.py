@@ -9,6 +9,8 @@ this file. If not visit https://opensource.org/licenses/BSD-3-Clause
 
 cleandir.py - A script for cleaning a directory by moving related
 type of files to separate folders.
+
+Homepage: https://github.com/ShankarCodes/scripts
 """
 
 # Extensions have to be space separated

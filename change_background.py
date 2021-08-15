@@ -7,6 +7,8 @@ You may use, distribute and modify this code under the terms of the
 BSD 3-Clause "New" or "Revised" License.
 You should have received a copy of the BSD-3-Clause License with
 this file. If not visit https://opensource.org/licenses/BSD-3-Clause
+
+Homepage: https://github.com/ShankarCodes/scripts
 """
 import ctypes
 import sys
