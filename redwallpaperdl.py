@@ -27,6 +27,7 @@ from dotenv import load_dotenv, find_dotenv
 import os
 import requests
 from mimetypes import MimeTypes
+import traceback
 
 NUMBER_CONCURRENT_CONNECTIONS = 4
 SAVE_PATH = 'saves'
@@ -83,6 +84,11 @@ class WallpaperDownloader:
                                   user_agent=user_agent,
                                   username=username)
         self.cache = {}
+        try:
+            with open(os.path.join(SAVE_PATH, 'cache.json'), 'r') as cache_file:
+                self.cache = json.load(cache_file)
+        except Exception as e:
+            print('Error while reading cache file')
 
     def get_trending_submissions(self, subreddit_name, limit=10):
         return [submission for submission in walldl.reddit.subreddit(subreddit_name).hot(limit=limit) if not submission.is_self]
@@ -102,18 +108,42 @@ class WallpaperDownloader:
                             f'Unknown type for submission url: {submission.url}')
                 else:
                     print(f'Unknown type for submission url: {submission.url}')
+        for dl in dl_list:
+            print(f'To download:{dl_list[0].url}')
         return dl_list
 
     def download(self, url_list):
-        all_requests = (grequests.get(u[0].url) for u in url_list)
+        try:
+            all_requests = (grequests.get(u[0].url) for u in url_list)
 
-        responses = grequests.map(all_requests, size=NUMBER_CONCURRENT_CONNECTIONS,
-                                  exception_handler=exception_handler)
-        for dl_tuple, response in zip(url_list, responses):
-            submission = dl_tuple[0]
-            extension = dl_tuple[1]
-            with open(os.path.join(SAVE_PATH, f'{submission.title}.{extension}'), 'wb') as save_file:
-                save_file.write(response.content)
+            responses = grequests.map(all_requests, size=NUMBER_CONCURRENT_CONNECTIONS,
+                                      exception_handler=exception_handler)
+            for dl_tuple, response in zip(url_list, responses):
+                if response is None:
+                    continue
+
+                submission = dl_tuple[0]
+                extension = dl_tuple[1]
+                try:
+                    with open(os.path.join(SAVE_PATH, f'{submission.title}.{extension}'), 'wb') as save_file:
+                        save_file.write(response.content)
+
+                    if self.cache.get(submission.id) is None:
+                        self.cache[submission.id] = {}
+                    self.cache[submission.id]['url'] = submission.url
+                    self.cache[submission.id]['title'] = submission.title
+                    self.cache[submission.id]['link'] = submission.permalink
+                    self.cache[submission.id]['filename'] = f'{submission.title}.{extension}'
+                except Exception as e:
+                    traceback.print_exc()
+                    print('Error saving file')
+
+        except Exception as e:
+            print(e)
+            print('Error while getting images')
+        finally:
+            with open(os.path.join(SAVE_PATH, 'cache.json'), 'w') as cache_file:
+                json.dump(self.cache, cache_file)
 
 
 walldl = WallpaperDownloader()
