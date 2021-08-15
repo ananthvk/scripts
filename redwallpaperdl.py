@@ -20,6 +20,7 @@ Homepage: https://github.com/ShankarCodes/scripts
 
 # List of sum subreddits for wallpapers.
 # Remove or add your own subreddits here
+import time
 import grequests
 import json
 import praw
@@ -45,9 +46,9 @@ subreddits = [
     'BeachPorn',
     'WaterPorn',
 ]
-subreddits = [
-    'EarthPorn'
-]
+# subreddits = [
+#    'EarthPorn'
+# ]
 
 # Imports
 load_dotenv(find_dotenv())
@@ -91,7 +92,10 @@ class WallpaperDownloader:
             print('Error while reading cache file')
 
     def get_trending_submissions(self, subreddit_name, limit=10):
-        return [submission for submission in walldl.reddit.subreddit(subreddit_name).hot(limit=limit) if not submission.is_self]
+        try:
+            return [submission for submission in walldl.reddit.subreddit(subreddit_name).hot(limit=limit) if not submission.is_self]
+        except Exception as e:
+            return []
 
     def generate_download_list(self, submissions):
         dl_list = []
@@ -108,8 +112,11 @@ class WallpaperDownloader:
                             f'Unknown type for submission url: {submission.url}')
                 else:
                     print(f'Unknown type for submission url: {submission.url}')
+            else:
+                print(
+                    f'Cache found for submission {submission.id}, Not downloading')
         for dl in dl_list:
-            print(f'To download:{dl_list[0].url}')
+            print(f'To download:{dl[0].url}')
         return dl_list
 
     def download(self, url_list):
@@ -132,7 +139,8 @@ class WallpaperDownloader:
                         self.cache[submission.id] = {}
                     self.cache[submission.id]['url'] = submission.url
                     self.cache[submission.id]['title'] = submission.title
-                    self.cache[submission.id]['link'] = submission.permalink
+                    self.cache[submission.id]['link'] = 'https://reddit.com' + \
+                        submission.permalink
                     self.cache[submission.id]['filename'] = f'{submission.title}.{extension}'
                 except Exception as e:
                     traceback.print_exc()
@@ -143,10 +151,13 @@ class WallpaperDownloader:
             print('Error while getting images')
         finally:
             with open(os.path.join(SAVE_PATH, 'cache.json'), 'w') as cache_file:
-                json.dump(self.cache, cache_file)
+                json.dump(self.cache, cache_file, indent=4, sort_keys=True)
 
 
 walldl = WallpaperDownloader()
-submissions = walldl.get_trending_submissions(subreddits[0])
-dl_list = walldl.generate_download_list(submissions)
-walldl.download(dl_list)
+for subreddit in subreddits:
+    submissions = walldl.get_trending_submissions(subreddit)
+    dl_list = walldl.generate_download_list(submissions)
+    walldl.download(dl_list)
+    print('Sleeping')
+    time.sleep(20)
