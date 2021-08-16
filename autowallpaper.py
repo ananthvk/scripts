@@ -14,6 +14,7 @@ Homepage: https://github.com/ShankarCodes/scripts
 """
 import sys
 import time
+from pathlib import Path
 from change_background import change_wallpaper
 import random
 import os
@@ -25,40 +26,32 @@ if len(sys.argv) >= 2:
 else:
     CHANGE_FREQUENCY = 5
 
-files = os.listdir(IMG_PATH)
+def get_files():
+    filepaths = sorted(Path(IMG_PATH).iterdir(), key=os.path.getmtime)
+    return filepaths
+
+files = get_files()
 
 
 def set_new_wallpaper():
     print('Changing wallpaper')
-    random.shuffle(files)
-    newpath = files.pop()
-    filepath = os.path.join(IMG_PATH, newpath)
-    if os.path.isfile(filepath):
-        change_wallpaper(filepath)
-        print('New wallpaper:'+filepath)
-    else:
-        print('Invalid file path, not a file')
-        print(filepath)
+    # Gets the most recent wallpapers
+    filepath = files.pop()
+    if filepath.is_file():
+        if str(filepath).endswith('json'):
+            return False
+        change_wallpaper(str(filepath.resolve()))
+        print('New wallpaper:'+str(filepath))
+        return True
+    print('Invalid file path, not a file')
+    print(filepath)
+    return False
 
 
 while True:
-    set_new_wallpaper()
+    st = set_new_wallpaper()
     if len(files) == 0:
-        # If all current files are used, download wallpapers again.
-        allfiles = os.listdir(IMG_PATH)
-        for fil in allfiles:
-            if not fil.endswith('json') and os.path.isfile(fil):
-                print('Moving file')
-                os.rename(fil, os.path.join('old', fil))
-        '''
-        print('Downloading wallpapers...')
-        download_wallpapers()
-        print('-'*50)
-        files = os.listdir('saves')
-        if len(files) <= 5:
-            # All files have been consumed!
-            print('Recycling as no new wallpapers')
-            files = files + os.listdir(os.path.join(IMG_PATH, 'old'))
-        '''
-        files = os.listdir(IMG_PATH)
-    time.sleep(CHANGE_FREQUENCY)
+        print('Recycling...')
+        files = get_files()
+    if st:
+        time.sleep(CHANGE_FREQUENCY)
