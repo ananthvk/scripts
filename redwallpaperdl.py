@@ -31,6 +31,7 @@ from mimetypes import MimeTypes
 import traceback
 NUMBER_TOP = 10
 NUMBER_CONCURRENT_CONNECTIONS = 8
+TIME_FILTER = 'day'
 SAVE_PATH = 'saves'
 subreddits = [
     'SpacePorn',
@@ -44,6 +45,11 @@ subreddits = [
     'VillagePorn',
     'BeachPorn',
     'WaterPorn',
+    'ExposurePorn',
+    'ImaginaryLandscapes',
+    'ImaginaryTechnology',
+    'futureporn',
+    'lightpainting'
 ]
 # subreddits = [
 #    'EarthPorn'
@@ -92,8 +98,11 @@ class WallpaperDownloader:
 
     def get_trending_submissions(self, subreddit_name, limit=NUMBER_TOP):
         try:
-            return [submission for submission in self.reddit.subreddit(subreddit_name).hot(limit=limit) if not submission.is_self]
+            #return [submission for submission in self.reddit.subreddit(subreddit_name).hot(limit=limit) if not submission.is_self]
+            # Gets the top posts as specified by TIME_FILTER
+            return [submission for submission in self.reddit.subreddit(subreddit_name).top(limit=limit, time_filter=TIME_FILTER) if not submission.is_self]
         except Exception as e:
+            print(e)
             return []
 
     def generate_download_list(self, submissions):
@@ -112,8 +121,21 @@ class WallpaperDownloader:
                 else:
                     print(f'Unknown type for submission url: {submission.url}')
             else:
-                print(
-                    f'Cache found for submission {submission.id}, Not downloading')
+                # Id is there in cache, check if that file is present or not.
+                if not os.path.exists(os.path.join(SAVE_PATH, self.cache[submission.id]['filename'])):
+                    print(f'File is not present but cache found for submission {submission.id}, Downloading')
+                    typ = mime.guess_type(submission.url)[0]
+                    if typ is not None:
+                        if typ.startswith('image'):
+                            # Add the extension to the list.
+                            dl_list += [(submission, typ.split('/')[-1])]
+                        else:
+                            print(
+                                f'Unknown type for submission url: {submission.url}')
+                    else:
+                        print(f'Unknown type for submission url: {submission.url}')
+                else:
+                    print(f'Cache found for submission {submission.id}, Not downloading')
         for dl in dl_list:
             print(f'To download:{dl[0].url}')
         return dl_list
@@ -132,17 +154,41 @@ class WallpaperDownloader:
                 extension = dl_tuple[1]
                 try:
                     # Clean file name
-                    fn = ''.join([i for i in submission.title if i.isalnum() or i in '.-_ ()[]'])
-                    with open(os.path.join(SAVE_PATH, f'{fn}.{extension}'), 'wb') as save_file:
-                        save_file.write(response.content)
+                    fn = ''.join([i for i in submission.title if i.isalnum() or i in '.-_ ()[]'])[:254]
+                    try:
+                        with open(os.path.join(SAVE_PATH, f'{fn}.{extension}'), 'wb') as save_file:
+                            save_file.write(response.content)
+                    except Exception as e:
+                        print('Error while saving the file to the filesystem')
+                        print('Continuing')
+                        continue
 
                     if self.cache.get(submission.id) is None:
                         self.cache[submission.id] = {}
-                    self.cache[submission.id]['url'] = submission.url
-                    self.cache[submission.id]['title'] = submission.title
-                    self.cache[submission.id]['link'] = 'https://reddit.com' + \
-                        submission.permalink
-                    self.cache[submission.id]['filename'] = f'{fn}.{extension}'
+                    try:
+                        self.cache[submission.id]['url'] = submission.url
+                        self.cache[submission.id]['title'] = submission.title
+                        self.cache[submission.id]['link'] = 'https://reddit.com' + \
+                            submission.permalink
+                        self.cache[submission.id]['filename'] = f'{fn}.{extension}'
+                        self.cache[submission.id]['author'] = submission.author.name
+                        self.cache[submission.id]['author_id'] = submission.author.id
+                    except Exception as e:
+                        print('Error while adding submission to cache')
+                    try:
+                        self.cache[submission.id]['created'] = submission.created_utc
+                    except Exception as e:
+                        print('Cannot get created time')
+
+                    try:
+                        self.cache[submission.id]['score'] = submission.score
+                    except Exception as e:
+                        print('Cannot get score')
+
+                    try:
+                        self.cache[submission.id]['upvote_ratio'] = submission.upvote_ratio
+                    except Exception as e:
+                        print('Cannot get upvote_ration')
                 except Exception as e:
                     traceback.print_exc()
                     del self.cache[submission.id]
@@ -159,14 +205,13 @@ class WallpaperDownloader:
 def download_wallpapers():
     walldl = WallpaperDownloader()
     print('Downloading')
+    submissions = []
     for subreddit in subreddits:
         print(f'Downloading from subreddit')
-        submissions = walldl.get_trending_submissions(subreddit)
-        print(submissions)
-        dl_list = walldl.generate_download_list(submissions)
-        walldl.download(dl_list)
-        # print('Sleeping')
-        # time.sleep(20)
+        submissions += walldl.get_trending_submissions(subreddit)
+
+    dl_list = walldl.generate_download_list(submissions)
+    walldl.download(dl_list)
 
 
 def main():
