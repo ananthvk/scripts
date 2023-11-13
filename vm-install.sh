@@ -87,9 +87,9 @@ arch-chroot /mnt /chroot-install.sh
 chmod -x /mnt/chroot-install.sh
 
 # Safer than writing user's password in a file
-cat << EOL
+cat << EOF | arch-chroot /mnt
 echo -e "$PASSWORD\n$PASSWORD" | sudo passwd "$USERNAME" -q > /dev/null
-EOL | arch-chroot /mnt
+EOF
 
 cat > /mnt/boot/loader/loader.conf << EOF
 default arch.conf

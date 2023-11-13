@@ -195,9 +195,9 @@ arch-chroot /mnt /chroot-install.sh
 chmod -x /mnt/chroot-install.sh
 
 # Safer than saving user's password in a file
-cat << EOL
+cat << EOF | arch-chroot /mnt
 echo -e "$password\n$password" | sudo passwd "$username" -q > /dev/null
-EOL | arch-chroot /mnt
+EOF
 
 umount -R /mnt
 echo "Installation completed successfully. Reboot the machine."
