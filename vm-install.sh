@@ -8,6 +8,17 @@ ROOT_PART="/dev/vda2"
 HOSTNAME="vm-arch"
 USERNAME="archlinux"
 PASSWORD="archlinux"
+force=false
+if [[ "$1" = "force" ]]; then force=true; fi
+
+if [[ "$force" = false ]]; then
+    if [[ -z "$(cat /proc/cpuinfo | grep -i hypervisor)" ]]; then
+        echo "WARNING: hypervisor not found in /proc/cpuinfo . Are you running this inside a VM?"
+        echo "If this is due to a misconfiguration, run the script as ./vm-install.sh force"
+        echo "Exiting..."
+        exit 1
+    fi
+fi
 
 if [[ -z "$(ls -A /sys/firmware/efi/efivars 2>/dev/null)" ]]; then
     echo "UEFI not found, this script does not support BIOS (yet)...exiting"
