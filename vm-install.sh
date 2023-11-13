@@ -86,10 +86,12 @@ chmod +x /mnt/chroot-install.sh
 arch-chroot /mnt /chroot-install.sh
 chmod -x /mnt/chroot-install.sh
 
-# Safer than writing user's password in a file
-cat << EOF | arch-chroot /mnt
-echo -e "$PASSWORD\n$PASSWORD" | sudo passwd "$USERNAME" -q > /dev/null
-EOF
+# :/ This still gets stored to root's .bash_history
+# cat << EOF | arch-chroot /mnt
+# echo -e "$PASSWORD\n$PASSWORD" | sudo passwd "$USERNAME" -q > /dev/null
+# EOF
+echo "$USERNAME:$PASSWORD" | chpasswd -R /mnt
+
 
 cat > /mnt/boot/loader/loader.conf << EOF
 default arch.conf
