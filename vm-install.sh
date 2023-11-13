@@ -64,7 +64,6 @@ locale-gen
 echo LANG=en_US.UTF-8 >> /etc/locale.conf
 echo $HOSTNAME > /etc/hostname
 useradd -m $USERNAME
-echo -e "$PASSWORD\n$PASSWORD" | sudo passwd "$USERNAME" -q > /dev/null
 usermod -aG wheel,audio,video,storage $USERNAME
 echo "Defaults insults" | sudo tee -a /etc/sudoers
 echo "%wheel ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers
@@ -86,6 +85,11 @@ EOF
 chmod +x /mnt/chroot-install.sh
 arch-chroot /mnt /chroot-install.sh
 chmod -x /mnt/chroot-install.sh
+
+# Safer than writing user's password in a file
+cat << EOL
+echo -e "$PASSWORD\n$PASSWORD" | sudo passwd "$USERNAME" -q > /dev/null
+EOL | arch-chroot /mnt
 
 cat > /mnt/boot/loader/loader.conf << EOF
 default arch.conf

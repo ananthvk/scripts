@@ -171,7 +171,6 @@ locale-gen
 echo LANG=en_US.UTF-8 >> /etc/locale.conf
 echo $hostname > /etc/hostname
 useradd -m $username
-echo -e "$password\n$password" | sudo passwd "$username" -q > /dev/null
 usermod -aG wheel,audio,video,storage $username
 echo "Defaults insults" | sudo tee -a /etc/sudoers
 echo "%wheel ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers
@@ -194,7 +193,11 @@ EOF
 chmod +x /mnt/chroot-install.sh
 arch-chroot /mnt /chroot-install.sh
 chmod -x /mnt/chroot-install.sh
-shred  /mnt/chroot-install.sh
+
+# Safer than saving user's password in a file
+cat << EOL
+echo -e "$password\n$password" | sudo passwd "$username" -q > /dev/null
+EOL | arch-chroot /mnt
 
 umount -R /mnt
 echo "Installation completed successfully. Reboot the machine."
