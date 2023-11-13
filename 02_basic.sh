@@ -78,7 +78,7 @@ select opt in kde minimal; do
         break;
         ;;
     minimal)
-        de_command="systemctl enable dhcpcd"
+        de_command="systemctl enable dhcpcd;echo 'static domain_name_servers=1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4' >> /etc/dhcpcd.conf"
         echo "Not installing any desktop environment"
         echo "You may want to configure wifi using arch-root since NetworkManager will not be installed"
         echo "Use dhcpcd & wpa_supplicant"
@@ -100,7 +100,6 @@ case $(read -t 10 -p "Do you want to use a local pacman mirror (y/N) (default:N,
         echo "Server = $mirror" > /etc/pacman.d/mirrorlist;
         ;;
 esac
-
 # Print a summary of file system changes
 echo "========================================"
 echo "|           SUMMARY OF INSTALL         |"

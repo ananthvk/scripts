@@ -69,9 +69,7 @@ usermod -aG wheel,audio,video,storage $USERNAME
 echo "Defaults insults" | sudo tee -a /etc/sudoers
 echo "%wheel ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers
 sed -i.bak 's/#ParallelDownloads.*/ParallelDownloads = 16/' /etc/pacman.conf
-pacman -S --disable-download-timeout efibootmgr grub --noconfirm > /dev/null
-grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-grub-mkconfig -o /boot/grub/grub.cfg
+bootctl --esp-path=/boot install
 mv /usr/bin/vi /usr/bin/vi.old
 ln -s /usr/bin/nvim /usr/bin/vi
 ln -s /usr/bin/nvim /usr/bin/vim
@@ -83,10 +81,24 @@ EOL
 echo "nameserver 1.1.1.1 1.0.0.1" > /etc/resolv.conf
 echo "static domain_name_servers=1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4" >> /etc/dhcpcd.conf
 systemctl enable dhcpcd
+systemctl enable systemd-boot-update
 EOF
 chmod +x /mnt/chroot-install.sh
 arch-chroot /mnt /chroot-install.sh
 chmod -x /mnt/chroot-install.sh
+
+cat > /mnt/boot/loader/loader.conf << EOF
+default arch.conf
+timeout 0
+console-mode auto
+EOF
+
+cat > /mnt/boot/loader/entries/arch.conf << EOF
+title   Arch Linux
+linux   /vmlinuz-linux
+initrd  /initramfs-linux.img
+options root="LABEL=linux_root" rootfstype=ext4 rw
+EOF
+
 (umount -R /mnt)
-(umount -R /mnt/boot)
 echo "Installation completed successfully. Reboot the machine."
