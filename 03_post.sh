@@ -1,6 +1,7 @@
 #!/bin/bash
-# After reboot
-#
+# Run this script after the basic arch install (02_basic.sh)
+# This script has to be run after rebooting, it will not work under arch-chroot
+
 # $(if [[ "$localtime_in_rtc" = true ]]; then echo "timedatectl set-rtc-localtime"; fi)
 # $(if [[ "$localtime_in_rtc" = true ]]; then echo "timedatectl set-local-rtc 1"; fi)
 # timedatectl set-ntp 1
@@ -12,3 +13,5 @@
 #     [Yy]* ) localtime_in_rtc=true ;;
 # esac
 
+
+yes | sudo pacman -Syyu plasma kde-applications networkmanager sddm xorg 

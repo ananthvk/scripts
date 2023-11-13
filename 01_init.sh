@@ -1,7 +1,5 @@
 #!/bin/bash
-# Run with curl -fsSL <IP> | bash
-# If there is interactive input, use
-# bash <(curl- fsSL <IP>)
+# bash <(curl -fsSL <IP>)
 
 # Set to fail in case of any error
 set -e
@@ -29,7 +27,7 @@ fi
 
 # Set timezone for India
 timedatectl set-timezone Asia/Kolkata
-echo "DONE"
+echo "Installation can proceed"
 echo "========================================"
 echo "Please create partitions manually using fdisk, cfdisk, gdisk, cgdisk, parted or any other tool."
 echo "Please provide atleast 1GB for the EFI partition(/efi). Then run 02_basic.sh"

@@ -67,6 +67,31 @@ while true; do
     fi
 done
 
+de="none"
+de_command=""
+PS3="Choose a desktop environment (if you want)"
+select opt in kde minimal; do
+    case $opt in
+    kde)
+        de_command="sudo pacman -Syyu plasma kde-applications networkmanager sddm xorg --noconfirm; systemctl enable sddm; systemctl enable NetworkManager"
+        de="kde"
+        break;
+        ;;
+    minimal)
+        de_command="systemctl enable dhcpcd"
+        echo "Not installing any desktop environment"
+        echo "You may want to configure wifi using arch-root since NetworkManager will not be installed"
+        echo "Use dhcpcd & wpa_supplicant"
+        break;
+        ;;
+    *)
+        echo "Option not recognized....no DE to be installed"
+        break;
+        ;;
+    esac
+done
+
+
 mv /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.old || true
 # Fork a subshell in which set -e is not present
 # TODO: Check if mirror is working
@@ -88,6 +113,7 @@ echo " "
 echo "Other info:"
 echo "Hostname: $hostname"
 echo "Username: $username"
+echo "DE: $de"
 
 # Check confirmation
 read -e -p "Do you want to continue (yes/no): " answer
@@ -115,10 +141,11 @@ if [[ -n "$(dmesg --notime | grep -i hypervisor)" ]]; then
     echo "Detected that the OS is running on a VM"
 fi
 
+sed -i.bak 's/#ParallelDownloads.*/ParallelDownloads = 16/' /etc/pacman.conf
 # Get recent mirrors
 reflector >> /etc/pacman.d/mirrorlist
 # Update archlinux-keyring incase of older isos
-yes | pacman -Sy archlinux-keyring
+pacman -Sy archlinux-keyring --noconfirm > /dev/null
 
 # Mount the directories
 echo " "
@@ -149,24 +176,32 @@ echo -e "$password\n$password" | sudo passwd "$username" -q > /dev/null
 usermod -aG wheel,audio,video,storage $username
 echo "Defaults insults" | sudo tee -a /etc/sudoers
 echo "%wheel ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers
-yes | pacman -S efibootmgr grub > /dev/null
+sed -i.bak 's/#ParallelDownloads.*/ParallelDownloads = 16/' /etc/pacman.conf
+pacman -S efibootmgr grub --noconfirm > /dev/null
 grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 mv /usr/bin/vi /usr/bin/vi.old
 ln -s /usr/bin/nvim /usr/bin/vi
 ln -s /usr/bin/nvim /usr/bin/vim
 cat >> /etc/hosts <<- EOL
-    127.0.0.1   localhost
-    ::1         localhost
-    127.0.0.1   $hostname
+127.0.0.1   localhost
+::1         localhost
+127.0.0.1   $hostname
 EOL
+echo "nameserver 1.1.1.1 1.0.0.1 > /etc/resolv.conf"
+$de_command
+echo $de > /de.txt
 EOF
 chmod +x /mnt/chroot-install.sh
 arch-chroot /mnt /chroot-install.sh
 chmod -x /mnt/chroot-install.sh
+shred  /mnt/chroot-install.sh
+
 umount -R /mnt
-echo "Installation completed successfully"
-echo "Please run 03_kde.sh to install KDE desktop environment."
-echo "After that reboot the machine."
-echo "Then run 04_util.sh to enable services and install some common utilities"
-echo "Run 05_dotfiles.sh to install dotfiles."
+echo "Installation completed successfully. Reboot the machine."
+echo "Run 03_post.sh to enable services and install some common utilities"
+echo "Run 04_dotfiles.sh to install dotfiles."
+# TOOD: Make a selectable menu for choosing partitions with lsblk
+# TODO: Enable services, fstrim, etc
+# TOOD: rfkill
+# TODO: Install microcode
