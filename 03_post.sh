@@ -12,6 +12,41 @@
 # case $(read -t 10 -p "Do you want to apply this fix? (default:N, timeout:10s)? " var; echo $var) in
 #     [Yy]* ) localtime_in_rtc=true ;;
 # esac
+# pacman -S xclip
+
+cd ~
+mkdir -p .zsh
+echo >.zshenv << EOF export ZDOTDIR="~/.zsh" 
+EOF
+# Set some environment variables
+export ZDOTDIR=~/.zsh
+export ZSH=~/.zsh/.oh-my-zsh
+export ZSH_CUSTOM=~/.zsh/.oh-my-zsh/custom
+export CHSH="no"
+export RUNZSH="no"
+
+# Install oh-my-zsh
+(cd "$ZDOTDIR" && curl -O https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)
+sh "$ZDOTDIR/install.sh" --unattended
+
+# Install zsh plugins - syntax highlighting
+(cd $ZDOTDIR && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git)
+echo "source ${ZDOTDIR}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ${ZDOTDIR:-$HOME}/.zshrc
+
+# Install zsh autosuggestions
+(cd $ZDOTDIR && git clone "https://github.com/zsh-users/zsh-autosuggestions" )
+echo "source ${ZDOTDIR}/zsh-autosuggestions/zsh-autosuggestions.zsh" >> ${ZDOTDIR:-$HOME}/.zshrc
 
 
-yes | sudo pacman -Syyu plasma kde-applications networkmanager sddm xorg 
+(cd $ZDOTDIR && git clone https://github.com/zsh-users/zsh-history-substring-search)
+echo "source ${ZDOTDIR}/zsh-history-substring-search/zsh-history-substring-search.zsh" >> ${ZDOTDIR:-$HOME}/.zshrc
+
+(cd $ZDOTDIR && git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $ZDOTDIR/powerlevel10k)
+echo "source $ZDOTDIR/powerlevel10k/powerlevel10k.zsh-theme" >> "${ZDOTDIR}/.zshrc"
+
+# Unset the variables
+unset ZDOTDIR
+unset ZSH
+unset CHSH
+unset RUNZSH
+
