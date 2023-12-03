@@ -44,6 +44,9 @@ echo "source ${ZDOTDIR}/zsh-history-substring-search/zsh-history-substring-searc
 (cd $ZDOTDIR && git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $ZDOTDIR/powerlevel10k)
 echo "source $ZDOTDIR/powerlevel10k/powerlevel10k.zsh-theme" >> "${ZDOTDIR}/.zshrc"
 
+(cd $ZDOTDIR && curl -SLO https://raw.githubusercontent.com/ananthvk/dotfiles/master/.zsh/.p10k.zsh)
+(cd $ZDOTDIR && curl -SLO https://raw.githubusercontent.com/ananthvk/dotfiles/master/.zsh/.zshrc)
+
 # Unset the variables
 unset ZDOTDIR
 unset ZSH
